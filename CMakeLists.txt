@@ -7,6 +7,7 @@ option(V8CMAKE_FIND_PYTHON "Enable finding python" ON)
 
 if(MSVC)
   enable_language(ASM_MASM)
+  set(CMAKE_ASM_MASM_FLAGS "/nologo")
   set_property(
     SOURCE ${PROJECT_BINARY_DIR}/embedded.S
            v8/src/heap/base/asm/arm64/push_registers_masm.asm
