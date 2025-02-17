@@ -132,61 +132,61 @@ set(enable-fpic
 # d8
 #
 
-add_executable(
-  d8
-  $<${is-posix}:v8/src/d8/d8-posix.cc>
-  $<${is-win}:v8/src/d8/d8-windows.cc>
-  v8/src/d8/async-hooks-wrapper.cc
-  v8/src/d8/d8-console.cc
-  v8/src/d8/d8-js.cc
-  v8/src/d8/d8-test.cc
-  v8/src/d8/d8-platforms.cc
-  v8/src/d8/d8.cc
-)
+# add_executable(
+#   d8
+#   $<${is-posix}:v8/src/d8/d8-posix.cc>
+#   $<${is-win}:v8/src/d8/d8-windows.cc>
+#   v8/src/d8/async-hooks-wrapper.cc
+#   v8/src/d8/d8-console.cc
+#   v8/src/d8/d8-js.cc
+#   v8/src/d8/d8-test.cc
+#   v8/src/d8/d8-platforms.cc
+#   v8/src/d8/d8.cc
+# )
 
-target_compile_definitions(d8 PRIVATE $<${is-msvc}:_HAS_EXCEPTIONS=0>)
-target_compile_options(d8 PRIVATE ${disable-exceptions})
-if(enable-fPIC)
-  target_compile_options(d8 PRIVATE ${enable-fpic})
-endif()
+# target_compile_definitions(d8 PRIVATE $<${is-msvc}:_HAS_EXCEPTIONS=0>)
+# target_compile_options(d8 PRIVATE ${disable-exceptions})
+# if(enable-fPIC)
+#   target_compile_options(d8 PRIVATE ${enable-fpic})
+# endif()
 
-target_include_directories(d8
-  PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8/include>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-  PRIVATE
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8>
-)
-
-target_link_libraries(d8
-  PRIVATE
-  v8_base_without_compiler
-  v8_compiler
-  v8_snapshot
-  # v8_inspector
-  v8_libplatform
-)
+# target_include_directories(d8
+#   PUBLIC
+#   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8/include>
+#   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+#   PRIVATE
+#   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8>
+# )
+# 
+# target_link_libraries(d8
+#   PRIVATE
+#   v8_base_without_compiler
+#   v8_compiler
+#   v8_snapshot
+#   v8_inspector
+#   v8_libplatform
+# )
 
 # add shell and hello-world
-add_executable(
-  shell
-  v8/samples/shell.cc
-)
-target_include_directories(shell
-  PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8/include>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-  PRIVATE
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8>
-)
-target_link_libraries(shell
-  PRIVATE
-  v8_base_without_compiler
-  v8_compiler
-  v8_snapshot
-  # v8_inspector
-  v8_libplatform
-)
+# add_executable(
+#   shell
+#   v8/samples/shell.cc
+# )
+# target_include_directories(shell
+#   PUBLIC
+#   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8/include>
+#   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+#   PRIVATE
+#   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8>
+# )
+# target_link_libraries(shell
+#   PRIVATE
+#   v8_base_without_compiler
+#   v8_compiler
+#   v8_snapshot
+#   # v8_inspector
+#   v8_libplatform
+# )
 
 # add_executable(
 #   hello-world
@@ -1104,55 +1104,4 @@ add_library(v8-adler32 OBJECT v8/third_party/zlib/adler32.c)
 target_include_directories(v8-adler32
   PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8/third_party/zlib>
-)
-
-# Create the monolithic V8 library target
-add_library(v8_monolithic STATIC)
-
-# Link all V8 components
-target_link_libraries(v8_monolithic
-  PUBLIC
-  v8_base_without_compiler
-  v8_compiler
-  v8_initializers
-  v8_libbase
-  v8_libplatform
-  v8_libsampler
-  v8_snapshot
-  v8_torque_generated
-  v8-bytecodes-builtin-list
-)
-
-# Set compile definitions
-target_compile_definitions(v8_monolithic
-  PUBLIC
-  ${v8_defines}
-  $<${is-msvc}:_HAS_EXCEPTIONS=0>
-)
-
-# Set compile options
-target_compile_options(v8_monolithic
-  PRIVATE
-  ${disable-exceptions}
-  $<$<BOOL:${enable-fPIC}>:${enable-fpic}>
-)
-
-# Set include directories
-target_include_directories(v8_monolithic
-  PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8/include>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-  PRIVATE
-  ${PROJECT_SOURCE_DIR}/v8
-  ${PROJECT_SOURCE_DIR}/v8/third_party/zlib
-  ${PROJECT_BINARY_DIR}
-)
-
-# Install rules
-install(TARGETS v8_monolithic
-  EXPORT v8_monolithic
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
