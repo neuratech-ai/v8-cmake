@@ -1,20 +1,19 @@
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.31)
 set(CMAKE_USER_MAKE_RULES_OVERRIDE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/MSVC.cmake")
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 project(V8 LANGUAGES CXX C ASM)
 
-option(V8CMAKE_FIND_PYTHON "Enable finding python" ON)
+# option(V8CMAKE_FIND_PYTHON "Enable finding python" ON)
 
 if(MSVC)
   enable_language(ASM_MASM)
   set(CMAKE_ASM_MASM_FLAGS "/nologo")
   set_property(
     SOURCE ${PROJECT_BINARY_DIR}/embedded.S
-           v8/src/heap/base/asm/arm64/push_registers_masm.asm
-           v8/src/heap/base/asm/ia32/push_registers_masm.asm
-           v8/src/heap/base/asm/x64/push_registers_masm.asm
+    v8/src/heap/base/asm/arm64/push_registers_masm.asm
+    v8/src/heap/base/asm/ia32/push_registers_masm.asm
+    v8/src/heap/base/asm/x64/push_registers_masm.asm
     PROPERTY LANGUAGE ASM_MASM)
-
 endif()
 
 add_definitions("-DV8_ENABLE_WEBASSEMBLY -DV8_ADVANCED_BIGINT_ALGORITHMS -DV8_ENABLE_WASM_SIMD256_REVEC")
@@ -29,24 +28,23 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-if (V8CMAKE_FIND_PYTHON)
-  find_package(Python 3 REQUIRED QUIET COMPONENTS Interpreter)
-endif()
+#if(V8CMAKE_FIND_PYTHON)
+#  find_package(Python 3 REQUIRED QUIET COMPONENTS Interpreter)
+#endif()
 find_package(Threads QUIET)
 
 include(CMakeDependentOption)
 include(GNUInstallDirs)
 
-include(CheckPythonModuleExists)
-include(GenerateBuiltinsList)
+# include(CheckPythonModuleExists)
 
-check_python_module_exists(PYTHON_HAVE_MARKUPSAFE markupsafe)
+# check_python_module_exists(PYTHON_HAVE_MARKUPSAFE markupsafe)
 
-if (NOT CMAKE_CXX_STANDARD)
+if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 20)
 endif()
 
-if (NOT CMAKE_C_STANDARD)
+if(NOT CMAKE_C_STANDARD)
   set(CMAKE_C_STANDARD 90)
 endif()
 
@@ -60,34 +58,34 @@ string(CONCAT is-posix $<OR:
   ${is-darwin},
   ${is-linux},
   ${is-aix}
->)
+  >)
 
 set(is-msvc $<CXX_COMPILER_ID:MSVC>)
 
 # FIXME obviously
 set(is-arm 0)
 set(is-arm64 0)
-if (CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "arm64" OR CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64")
+if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "arm64" OR CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64")
   set(is-arm64 1)
-endif ()
+endif()
 set(is-ia32 0)
 set(is-mips 0)
 set(is-mips64 0)
 set(is-ppc 0)
 set(is-ppc64 0)
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(ppc|powerpc)")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(ppc|powerpc)")
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(is-ppc64 1)
   else()
     set(is-ppc 1)
   endif()
-endif ()
+endif()
 
 set(is-s390 $<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},S390>)
 string(CONCAT is-x64 $<OR:
   $<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},AMD64>,
   $<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},x86_64>
->)
+  >)
 
 option(V8_ENABLE_CONCURRENT_MARKING "Enable concurrent marking" ON)
 option(V8_ENABLE_I18N "Enable Internationalization support")
@@ -154,61 +152,61 @@ endif()
 
 target_include_directories(d8
   PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   PRIVATE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8>
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8>
 )
 
 target_link_libraries(d8
   PRIVATE
-    v8_base_without_compiler
-    v8_compiler
-    v8_snapshot
-    v8_inspector
-    v8_libplatform
+  v8_base_without_compiler
+  v8_compiler
+  v8_snapshot
+  # v8_inspector
+  v8_libplatform
 )
 
 # add shell and hello-world
 add_executable(
-        shell
-        v8/samples/shell.cc
+  shell
+  v8/samples/shell.cc
 )
 target_include_directories(shell
-        PUBLIC
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8/include>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-        PRIVATE
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8>
-        )
-target_link_libraries(shell
-        PRIVATE
-        v8_base_without_compiler
-        v8_compiler
-        v8_snapshot
-        v8_inspector
-        v8_libplatform
-        )
-
-add_executable(
-        hello-world
-        v8/samples/hello-world.cc
+  PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  PRIVATE
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8>
 )
-target_include_directories(hello-world
-        PUBLIC
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8/include>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-        PRIVATE
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8>
-        )
-target_link_libraries(hello-world
-        PRIVATE
-        v8_base_without_compiler
-        v8_compiler
-        v8_snapshot
-        v8_inspector
-        v8_libplatform
-        )
+target_link_libraries(shell
+  PRIVATE
+  v8_base_without_compiler
+  v8_compiler
+  v8_snapshot
+  # v8_inspector
+  v8_libplatform
+)
+
+# add_executable(
+#   hello-world
+#   v8/samples/hello-world.cc
+# )
+# target_include_directories(hello-world
+#   PUBLIC
+#   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8/include>
+#   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+#   PRIVATE
+#   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8>
+# )
+# target_link_libraries(hello-world
+#   PRIVATE
+#   v8_base_without_compiler
+#   v8_compiler
+#   v8_snapshot
+#   v8_inspector
+#   v8_libplatform
+# )
 
 # more granular library support
 add_library(v8-i18n-support OBJECT)
@@ -241,9 +239,9 @@ target_link_libraries(v8-i18n-support PRIVATE v8_torque_generated)
 
 target_include_directories(v8-i18n-support
   PRIVATE
-    ${PROJECT_SOURCE_DIR}/v8
-    ${PROJECT_SOURCE_DIR}/v8/src/objects
-    ${PROJECT_SOURCE_DIR}/v8/include
+  ${PROJECT_SOURCE_DIR}/v8
+  ${PROJECT_SOURCE_DIR}/v8/src/objects
+  ${PROJECT_SOURCE_DIR}/v8/include
 )
 
 file(GLOB api-sources RELATIVE ${PROJECT_SOURCE_DIR} CONFIGURE_DEPENDS v8/src/api/*.cc)
@@ -315,7 +313,7 @@ list(REMOVE_ITEM builtin-sources
   v8/src/builtins/builtins-intl.cc
 )
 
-if (NOT WIN32)
+if(NOT WIN32)
   list(REMOVE_ITEM diagnostic-sources v8/src/diagnostics/unwinding-info-win64.cc)
 endif()
 list(REMOVE_ITEM diagnostic-sources v8/src/diagnostics/etw-jit-win.cc)
@@ -449,25 +447,25 @@ add_library(v8_base_without_compiler STATIC
   $<TARGET_OBJECTS:v8-adler32>
 )
 
-if (WIN32)
-  if (CMAKE_SYSTEM_VERSION VERSION_GREATER 10) # Windows 10
+if(WIN32)
+  if(CMAKE_SYSTEM_VERSION VERSION_GREATER 10) # Windows 10
     set(windows-version 0x0A00)
-  elseif (CMAKE_SYSTEM_VERSION VERSION_GREATER 6.3) # Windows 8.1
+  elseif(CMAKE_SYSTEM_VERSION VERSION_GREATER 6.3) # Windows 8.1
     set(windows-version 0x0603)
-  elseif (CMAKE_SYSTEM_VERSION VERSION_GREATER 6.2) # Windows 8
+  elseif(CMAKE_SYSTEM_VERSION VERSION_GREATER 6.2) # Windows 8
     set(windows-version 0x0602)
-  elseif (CMAKE_SYSTEM_VERSION VERSION_GREATER 6.1) # Windows 7
+  elseif(CMAKE_SYSTEM_VERSION VERSION_GREATER 6.1) # Windows 7
     set(windows-version 0x0601)
-  elseif (CMAKE_SYSTEM_VERSION VERSION_GREATER 6.0) # Windows Vista
+  elseif(CMAKE_SYSTEM_VERSION VERSION_GREATER 6.0) # Windows Vista
     set(windows-version 0x0600)
   endif()
 endif()
 
 set_property(SOURCE v8/src/diagnostics/unwinding-info-win64.cc
   APPEND PROPERTY
-    COMPILE_DEFINITIONS
-      UNICODE
-      _WIN32_WINNT=${windows-version}
+  COMPILE_DEFINITIONS
+  UNICODE
+  _WIN32_WINNT=${windows-version}
 )
 
 target_compile_definitions(v8_base_without_compiler PRIVATE ${v8_defines} $<${is-msvc}:_HAS_EXCEPTIONS=0>)
@@ -478,21 +476,21 @@ endif()
 
 target_include_directories(v8_base_without_compiler
   PRIVATE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8/include>
-    $<BUILD_INTERFACE:$<TARGET_PROPERTY:v8-bytecodes-builtin-list,INTERFACE_INCLUDE_DIRECTORIES>>
-    ${PROJECT_SOURCE_DIR}/v8
-    ${PROJECT_SOURCE_DIR}/v8/third_party/zlib
-    ${PROJECT_BINARY_DIR}
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8/include>
+  $<BUILD_INTERFACE:$<TARGET_PROPERTY:v8-bytecodes-builtin-list,INTERFACE_INCLUDE_DIRECTORIES>>
+  ${PROJECT_SOURCE_DIR}/v8
+  ${PROJECT_SOURCE_DIR}/v8/third_party/zlib
+  ${PROJECT_BINARY_DIR}
 )
 
 target_link_libraries(
   v8_base_without_compiler
   PRIVATE
-    v8_libbase
-    v8_libsampler
-    v8_torque_generated
+  v8_libbase
+  v8_libsampler
+  v8_torque_generated
   PUBLIC
-    v8-bytecodes-builtin-list
+  v8-bytecodes-builtin-list
 )
 
 #
@@ -514,20 +512,20 @@ endif()
 
 target_include_directories(v8_compiler
   PUBLIC
-    ${PROJECT_BINARY_DIR}
+  ${PROJECT_BINARY_DIR}
   PRIVATE
-    ${PROJECT_BINARY_DIR}
-    ${PROJECT_SOURCE_DIR}/v8
-    $<BUILD_INTERFACE:$<TARGET_PROPERTY:v8-bytecodes-builtin-list,INTERFACE_INCLUDE_DIRECTORIES>>
+  ${PROJECT_BINARY_DIR}
+  ${PROJECT_SOURCE_DIR}/v8
+  $<BUILD_INTERFACE:$<TARGET_PROPERTY:v8-bytecodes-builtin-list,INTERFACE_INCLUDE_DIRECTORIES>>
 )
 
 target_link_libraries(v8_compiler
   PRIVATE
-    v8_libbase
-    v8_base_without_compiler
-    v8_torque_generated
+  v8_libbase
+  v8_base_without_compiler
+  v8_torque_generated
   PUBLIC
-    v8-bytecodes-builtin-list
+  v8-bytecodes-builtin-list
 )
 
 #
@@ -595,8 +593,8 @@ endif()
 
 target_include_directories(v8_initializers
   PRIVATE
-    ${PROJECT_SOURCE_DIR}/v8
-    ${PROJECT_BINARY_DIR}
+  ${PROJECT_SOURCE_DIR}/v8
+  ${PROJECT_BINARY_DIR}
 )
 
 target_link_libraries(v8_initializers PRIVATE v8_torque_generated v8-bytecodes-builtin-list)
@@ -623,29 +621,29 @@ target_include_directories(v8_snapshot PRIVATE ${PROJECT_SOURCE_DIR}/v8)
 
 target_link_libraries(v8_snapshot
   PRIVATE
-    v8_torque_generated
-    v8-bytecodes-builtin-list
+  v8_torque_generated
+  v8-bytecodes-builtin-list
 )
 
 # Note: allow passing in v8_random_seed
 add_custom_command(
   COMMAND
-    mksnapshot
-    --embedded_src ${PROJECT_BINARY_DIR}/embedded.S
-    --startup_src ${PROJECT_BINARY_DIR}/snapshot.cc
-    $<${is-arm64}:--target_arch=arm64>
-    $<${is-x64}:--target_arch=x64>
-    $<${is-ppc}:--target_arch=ppc>
-    $<${is-ppc64}:--target_arch=ppc64>
-    $<$<PLATFORM_ID:Darwin>:--target_os=mac>
-    $<$<PLATFORM_ID:Linux>:--target_os=linux>
-    $<$<PLATFORM_ID:Windows>:--target_os=win>
-    --turbo_instruction_scheduling
+  mksnapshot
+  --embedded_src ${PROJECT_BINARY_DIR}/embedded.S
+  --startup_src ${PROJECT_BINARY_DIR}/snapshot.cc
+  $<${is-arm64}:--target_arch=arm64>
+  $<${is-x64}:--target_arch=x64>
+  $<${is-ppc}:--target_arch=ppc>
+  $<${is-ppc64}:--target_arch=ppc64>
+  $<$<PLATFORM_ID:Darwin>:--target_os=mac>
+  $<$<PLATFORM_ID:Linux>:--target_os=linux>
+  $<$<PLATFORM_ID:Windows>:--target_os=win>
+  --turbo_instruction_scheduling
   DEPENDS
-    mksnapshot
+  mksnapshot
   OUTPUT
-    ${PROJECT_BINARY_DIR}/embedded.S
-    ${PROJECT_BINARY_DIR}/snapshot.cc
+  ${PROJECT_BINARY_DIR}/embedded.S
+  ${PROJECT_BINARY_DIR}/snapshot.cc
 )
 
 #
@@ -655,101 +653,101 @@ add_custom_command(
 # Note: this is the inspector, broken out for ease of maintenance.
 # The GN files are conceptually structured the same but they don't
 # build it as a separate library. We do because it's easier that way.
-set(inspector_files
-  ${PROJECT_BINARY_DIR}/inspector/include/inspector/Debugger.h
-  ${PROJECT_BINARY_DIR}/inspector/include/inspector/Runtime.h
-  ${PROJECT_BINARY_DIR}/inspector/include/inspector/Schema.h
-  ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Console.cpp
-  ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Console.h
-  ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Debugger.cpp
-  ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Debugger.h
-  ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Forward.h
-  ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/HeapProfiler.cpp
-  ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/HeapProfiler.h
-  ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Profiler.cpp
-  ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Profiler.h
-  ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Protocol.cpp
-  ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Protocol.h
-  ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Runtime.cpp
-  ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Runtime.h
-  ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Schema.cpp
-  ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Schema.h
-)
-
-foreach(filename IN LISTS inspector_files)
-  get_filename_component(directory ${filename} DIRECTORY)
-  list(APPEND inspector_dirs ${directory})
-endforeach()
-list(REMOVE_DUPLICATES inspector_dirs)
-
-file(GLOB inspector-sources
-  RELATIVE ${PROJECT_SOURCE_DIR}
-  CONFIGURE_DEPENDS v8/src/inspector/*.cc
-)
-
-file(GLOB inspector-protocol-sources
-  RELATIVE ${PROJECT_SOURCE_DIR}
-  CONFIGURE_DEPENDS v8/third_party/inspector_protocol/crdtp/*.cc
-)
-
-list(FILTER inspector-protocol-sources EXCLUDE REGEX "_test[.]cc$")
-list(FILTER inspector-protocol-sources EXCLUDE REGEX "crdtp/test_.*[.]cc$")
-
-add_library(v8_inspector STATIC
-  ${inspector-protocol-sources}
-  ${inspector-sources}
-  ${inspector_files}
-)
-
-target_compile_features(v8_inspector PUBLIC cxx_std_17)
-target_compile_options(v8_inspector PRIVATE ${disable-exceptions})
-if(enable-fPIC)
-  target_compile_options(v8_inspector PRIVATE ${enable-fpic})
-endif()
-target_compile_definitions(v8_inspector PUBLIC $<${is-msvc}:_HAS_EXCEPTIONS=0>)
-
-target_include_directories(v8_inspector
-  PRIVATE
-    ${PROJECT_BINARY_DIR}/inspector
-    ${PROJECT_SOURCE_DIR}/v8
-    ${PROJECT_SOURCE_DIR}/v8/include
-    ${PROJECT_SOURCE_DIR}/v8/third_party/googletest/src/googlemock/include
-    ${PROJECT_SOURCE_DIR}/v8/third_party/googletest/src/googletest/include
-)
-
-target_link_libraries(v8_inspector PRIVATE v8_torque_generated)
-
-file(GLOB inspector-templates
-  RELATIVE ${PROJECT_SOURCE_DIR}
-  CONFIGURE_DEPENDS
-    v8/third_party/inspector_protocol/lib/*.template
-    v8/third_party/inspector_protocol/templates/*.template
-)
-
-add_custom_command(
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${inspector_dirs}
-  OUTPUT ${inspector_dirs}
-)
-
-add_custom_command(
-  COMMAND
-    Python::Interpreter
-    v8/third_party/inspector_protocol/code_generator.py
-    --config v8/src/inspector/inspector_protocol_config.json
-    --config_value protocol.path=v8/include/js_protocol.pdl
-    --jinja_dir v8/third_party
-    --output_base ${PROJECT_BINARY_DIR}/inspector/src/inspector
-    --inspector_protocol_dir third_party/inspector_protocol
-  WORKING_DIRECTORY
-    ${PROJECT_SOURCE_DIR}
-  DEPENDS
-    v8/third_party/inspector_protocol/code_generator.py
-    v8/src/inspector/inspector_protocol_config.json
-    ${inspector-templates}
-    ${inspector_dirs}
-  OUTPUT
-    ${inspector_files}
-)
+# set(inspector_files
+#   ${PROJECT_BINARY_DIR}/inspector/include/inspector/Debugger.h
+#   ${PROJECT_BINARY_DIR}/inspector/include/inspector/Runtime.h
+#   ${PROJECT_BINARY_DIR}/inspector/include/inspector/Schema.h
+#   ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Console.cpp
+#   ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Console.h
+#   ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Debugger.cpp
+#   ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Debugger.h
+#   ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Forward.h
+#   ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/HeapProfiler.cpp
+#   ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/HeapProfiler.h
+#   ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Profiler.cpp
+#   ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Profiler.h
+#   ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Protocol.cpp
+#   ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Protocol.h
+#   ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Runtime.cpp
+#   ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Runtime.h
+#   ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Schema.cpp
+#   ${PROJECT_BINARY_DIR}/inspector/src/inspector/protocol/Schema.h
+# )
+# 
+# foreach(filename IN LISTS inspector_files)
+#   get_filename_component(directory ${filename} DIRECTORY)
+#   list(APPEND inspector_dirs ${directory})
+# endforeach()
+# list(REMOVE_DUPLICATES inspector_dirs)
+# 
+# file(GLOB inspector-sources
+#   RELATIVE ${PROJECT_SOURCE_DIR}
+#   CONFIGURE_DEPENDS v8/src/inspector/*.cc
+# )
+# 
+# file(GLOB inspector-protocol-sources
+#   RELATIVE ${PROJECT_SOURCE_DIR}
+#   CONFIGURE_DEPENDS v8/third_party/inspector_protocol/crdtp/*.cc
+# )
+# 
+# list(FILTER inspector-protocol-sources EXCLUDE REGEX "_test[.]cc$")
+# list(FILTER inspector-protocol-sources EXCLUDE REGEX "crdtp/test_.*[.]cc$")
+# 
+# add_library(v8_inspector STATIC
+#   ${inspector-protocol-sources}
+#   ${inspector-sources}
+#   ${inspector_files}
+# )
+# 
+# target_compile_features(v8_inspector PUBLIC cxx_std_17)
+# target_compile_options(v8_inspector PRIVATE ${disable-exceptions})
+# if(enable-fPIC)
+#   target_compile_options(v8_inspector PRIVATE ${enable-fpic})
+# endif()
+# target_compile_definitions(v8_inspector PUBLIC $<${is-msvc}:_HAS_EXCEPTIONS=0>)
+# 
+# target_include_directories(v8_inspector
+#   PRIVATE
+#   ${PROJECT_BINARY_DIR}/inspector
+#   ${PROJECT_SOURCE_DIR}/v8
+#   ${PROJECT_SOURCE_DIR}/v8/include
+#   ${PROJECT_SOURCE_DIR}/v8/third_party/googletest/src/googlemock/include
+#   ${PROJECT_SOURCE_DIR}/v8/third_party/googletest/src/googletest/include
+# )
+# 
+# target_link_libraries(v8_inspector PRIVATE v8_torque_generated)
+# 
+# file(GLOB inspector-templates
+#   RELATIVE ${PROJECT_SOURCE_DIR}
+#   CONFIGURE_DEPENDS
+#   v8/third_party/inspector_protocol/lib/*.template
+#   v8/third_party/inspector_protocol/templates/*.template
+# )
+# 
+# add_custom_command(
+#   COMMAND ${CMAKE_COMMAND} -E make_directory ${inspector_dirs}
+#   OUTPUT ${inspector_dirs}
+# )
+# 
+# add_custom_command(
+#   COMMAND
+#   Python::Interpreter
+#   v8/third_party/inspector_protocol/code_generator.py
+#   --config v8/src/inspector/inspector_protocol_config.json
+#   --config_value protocol.path=v8/include/js_protocol.pdl
+#   --jinja_dir v8/third_party
+#   --output_base ${PROJECT_BINARY_DIR}/inspector/src/inspector
+#   --inspector_protocol_dir third_party/inspector_protocol
+#   WORKING_DIRECTORY
+#   ${PROJECT_SOURCE_DIR}
+#   DEPENDS
+#   v8/third_party/inspector_protocol/code_generator.py
+#   v8/src/inspector/inspector_protocol_config.json
+#   ${inspector-templates}
+#   ${inspector_dirs}
+#   OUTPUT
+#   ${inspector_files}
+# )
 
 #
 # v8_libplatform
@@ -758,20 +756,20 @@ add_custom_command(
 add_library(v8_libplatform STATIC)
 target_sources(v8_libplatform
   PRIVATE
-    $<${is-win}:v8/src/libplatform/tracing/recorder-win.cc>
-    v8/src/libplatform/default-foreground-task-runner.cc
-    v8/src/libplatform/default-job.cc
-    v8/src/libplatform/default-platform.cc
-    v8/src/libplatform/default-thread-isolated-allocator.cc
-    v8/src/libplatform/default-worker-threads-task-runner.cc
-    v8/src/libplatform/delayed-task-queue.cc
-    v8/src/libplatform/task-queue.cc
-    v8/src/libplatform/tracing/trace-buffer.cc
-    v8/src/libplatform/tracing/trace-config.cc
-    v8/src/libplatform/tracing/trace-object.cc
-    v8/src/libplatform/tracing/trace-writer.cc
-    v8/src/libplatform/tracing/tracing-controller.cc
-    v8/src/libplatform/worker-thread.cc
+  $<${is-win}:v8/src/libplatform/tracing/recorder-win.cc>
+  v8/src/libplatform/default-foreground-task-runner.cc
+  v8/src/libplatform/default-job.cc
+  v8/src/libplatform/default-platform.cc
+  v8/src/libplatform/default-thread-isolated-allocator.cc
+  v8/src/libplatform/default-worker-threads-task-runner.cc
+  v8/src/libplatform/delayed-task-queue.cc
+  v8/src/libplatform/task-queue.cc
+  v8/src/libplatform/tracing/trace-buffer.cc
+  v8/src/libplatform/tracing/trace-config.cc
+  v8/src/libplatform/tracing/trace-object.cc
+  v8/src/libplatform/tracing/trace-writer.cc
+  v8/src/libplatform/tracing/tracing-controller.cc
+  v8/src/libplatform/worker-thread.cc
 )
 
 target_compile_definitions(v8_libplatform PRIVATE $<${is-msvc}:_HAS_EXCEPTIONS=0>)
@@ -782,9 +780,9 @@ endif()
 
 target_include_directories(v8_libplatform
   PUBLIC
-    ${PROJECT_SOURCE_DIR}/v8/include
+  ${PROJECT_SOURCE_DIR}/v8/include
   PRIVATE
-    ${PROJECT_SOURCE_DIR}/v8
+  ${PROJECT_SOURCE_DIR}/v8
 )
 
 target_link_libraries(v8_libplatform PRIVATE v8_libbase)
@@ -797,8 +795,8 @@ add_library(v8_libsampler STATIC v8/src/libsampler/sampler.cc)
 
 target_include_directories(v8_libsampler
   PRIVATE
-    ${PROJECT_SOURCE_DIR}/v8
-    ${PROJECT_SOURCE_DIR}/v8/include
+  ${PROJECT_SOURCE_DIR}/v8
+  ${PROJECT_SOURCE_DIR}/v8/include
 )
 
 target_compile_definitions(v8_libsampler PRIVATE $<${is-msvc}:_HAS_EXCEPTIONS=0>)
@@ -860,21 +858,46 @@ endif()
 target_include_directories(v8_libbase PRIVATE ${PROJECT_SOURCE_DIR}/v8)
 target_link_libraries(v8_libbase
   PRIVATE
-    Threads::Threads
-    $<${is-linux}:${CMAKE_DL_LIBS}>
-    $<${is-linux}:rt>
-    $<${is-win}:winmm>
-    $<${is-win}:dbghelp>
+  Threads::Threads
+  $<${is-linux}:${CMAKE_DL_LIBS}>
+  $<${is-linux}:rt>
+  $<${is-win}:winmm>
+  $<${is-win}:dbghelp>
 )
 
 #
 # bytecode_builtins_list_generator
 #
+function(v8_generate_builtins_list target-dir)
+  set(directory ${target-dir}/builtins-generated)
+  set(output ${directory}/bytecodes-builtins-list.h)
+
+  # Create directory as part of the generator command to avoid race conditions
+  add_custom_command(
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${directory}
+    COMMAND bytecode_builtins_list_generator ${output}.tmp
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${output}.tmp ${output}
+    COMMAND ${CMAKE_COMMAND} -E remove ${output}.tmp
+    OUTPUT ${output}
+    DEPENDS
+    v8/src/builtins/generate-bytecodes-builtins-list.cc
+    v8/src/interpreter/bytecode-operands.cc
+    v8/src/interpreter/bytecodes.cc
+    COMMENT "Generating ${output}"
+    VERBATIM)
+
+  set_source_files_properties(${output} PROPERTIES GENERATED TRUE)
+
+  add_library(v8-bytecodes-builtin-list INTERFACE)
+  target_include_directories(v8-bytecodes-builtin-list INTERFACE ${target-dir})
+  target_sources(v8-bytecodes-builtin-list INTERFACE ${output})
+endfunction()
+
 v8_generate_builtins_list(${PROJECT_BINARY_DIR}/generated)
 
 target_include_directories(v8-bytecodes-builtin-list
   INTERFACE
-    ${PROJECT_BINARY_DIR}/generated
+  ${PROJECT_BINARY_DIR}/generated
 )
 
 add_executable(
@@ -886,7 +909,7 @@ add_executable(
 
 target_include_directories(bytecode_builtins_list_generator
   PRIVATE
-    ${PROJECT_SOURCE_DIR}/v8
+  ${PROJECT_SOURCE_DIR}/v8
 )
 
 target_link_libraries(bytecode_builtins_list_generator v8_libbase)
@@ -996,40 +1019,40 @@ target_link_libraries(v8_torque_generated PRIVATE v8-bytecodes-builtin-list)
 
 target_include_directories(v8_torque_generated
   PUBLIC
-    ${PROJECT_BINARY_DIR}
-    ${PROJECT_SOURCE_DIR}/v8/include
-    ${PROJECT_SOURCE_DIR}/v8
+  ${PROJECT_BINARY_DIR}
+  ${PROJECT_SOURCE_DIR}/v8/include
+  ${PROJECT_SOURCE_DIR}/v8
 )
 
 # The torque-outputs and torque_outputs variables can have too many characters
 # on Windows to be executed on the command line, so we have to write it to a
 # temporary file and execute that 
 file(WRITE "${PROJECT_BINARY_DIR}/touch_torque_outputs.cmake"
-           "file(TOUCH ${torque-outputs};${torque_outputs})")
+  "file(TOUCH ${torque-outputs};${torque_outputs})")
 
 add_custom_command(
   COMMAND
-    torque
-    -o ${PROJECT_BINARY_DIR}/torque-generated
-    -v8-root ${PROJECT_SOURCE_DIR}/v8
-    ${torque_files}
+  torque
+  -o ${PROJECT_BINARY_DIR}/torque-generated
+  -v8-root ${PROJECT_SOURCE_DIR}/v8
+  ${torque_files}
   COMMAND
-    ${CMAKE_COMMAND} -P ${PROJECT_BINARY_DIR}/touch_torque_outputs.cmake
+  ${CMAKE_COMMAND} -P ${PROJECT_BINARY_DIR}/touch_torque_outputs.cmake
   DEPENDS
-    torque
-    ${torque_dirs}
-    ${torque_files_abs}
+  torque
+  ${torque_dirs}
+  ${torque_files_abs}
   OUTPUT
-    ${torque-outputs}
-    ${torque_outputs}
+  ${torque-outputs}
+  ${torque_outputs}
 )
 
 
 add_custom_command(
   COMMAND
-    ${CMAKE_COMMAND} -E make_directory ${torque_dirs}
+  ${CMAKE_COMMAND} -E make_directory ${torque_dirs}
   OUTPUT
-    ${torque_dirs}
+  ${torque_dirs}
 )
 
 #
@@ -1068,17 +1091,68 @@ target_compile_options(mksnapshot PRIVATE ${disable-exceptions})
 target_include_directories(mksnapshot PRIVATE ${PROJECT_SOURCE_DIR}/v8)
 target_link_libraries(mksnapshot
   PRIVATE
-    v8_libbase
-    v8_libplatform
-    v8_base_without_compiler
-    v8_compiler
-    v8_initializers
-    v8-bytecodes-builtin-list
-    v8_torque_generated
+  v8_libbase
+  v8_libplatform
+  v8_base_without_compiler
+  v8_compiler
+  v8_initializers
+  v8-bytecodes-builtin-list
+  v8_torque_generated
 )
 
 add_library(v8-adler32 OBJECT v8/third_party/zlib/adler32.c)
 target_include_directories(v8-adler32
   PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8/third_party/zlib>
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8/third_party/zlib>
+)
+
+# Create the monolithic V8 library target
+add_library(v8_monolithic STATIC)
+
+# Link all V8 components
+target_link_libraries(v8_monolithic
+  PUBLIC
+  v8_base_without_compiler
+  v8_compiler
+  v8_initializers
+  v8_libbase
+  v8_libplatform
+  v8_libsampler
+  v8_snapshot
+  v8_torque_generated
+  v8-bytecodes-builtin-list
+)
+
+# Set compile definitions
+target_compile_definitions(v8_monolithic
+  PUBLIC
+  ${v8_defines}
+  $<${is-msvc}:_HAS_EXCEPTIONS=0>
+)
+
+# Set compile options
+target_compile_options(v8_monolithic
+  PRIVATE
+  ${disable-exceptions}
+  $<$<BOOL:${enable-fPIC}>:${enable-fpic}>
+)
+
+# Set include directories
+target_include_directories(v8_monolithic
+  PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/v8/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  PRIVATE
+  ${PROJECT_SOURCE_DIR}/v8
+  ${PROJECT_SOURCE_DIR}/v8/third_party/zlib
+  ${PROJECT_BINARY_DIR}
+)
+
+# Install rules
+install(TARGETS v8_monolithic
+  EXPORT v8_monolithic
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
