@@ -1024,12 +1024,15 @@ target_include_directories(v8_torque_generated
   ${PROJECT_SOURCE_DIR}/v8
 )
 
-# The torque-outputs and torque_outputs variables can have too many characters
-# on Windows to be executed on the command line, so we have to write it to a
-# temporary file and execute that 
-file(WRITE "${PROJECT_BINARY_DIR}/touch_torque_outputs.cmake"
-  "file(TOUCH ${torque-outputs};${torque_outputs})")
+# First ensure output directories exist
+foreach(dir IN LISTS torque_dirs)
+  file(MAKE_DIRECTORY ${dir})
+endforeach()
 
+# Generate a timestamp file to properly track dependency changes
+set(torque_timestamp_file "${PROJECT_BINARY_DIR}/torque-generated/torque_generated.timestamp")
+
+# Use a single custom command for code generation that uses a timestamp file
 add_custom_command(
   COMMAND
   torque
@@ -1037,23 +1040,29 @@ add_custom_command(
   -v8-root ${PROJECT_SOURCE_DIR}/v8
   ${torque_files}
   COMMAND
-  ${CMAKE_COMMAND} -P ${PROJECT_BINARY_DIR}/touch_torque_outputs.cmake
+  ${CMAKE_COMMAND} -E touch ${torque_timestamp_file}
   DEPENDS
   torque
-  ${torque_dirs}
   ${torque_files_abs}
   OUTPUT
-  ${torque-outputs}
-  ${torque_outputs}
+  ${torque_timestamp_file}
+  COMMENT "Generating Torque files"
+  VERBATIM
 )
 
-
-add_custom_command(
-  COMMAND
-  ${CMAKE_COMMAND} -E make_directory ${torque_dirs}
-  OUTPUT
-  ${torque_dirs}
+# Add a custom target to make it easier to just build the generated files
+add_custom_target(
+  gen_torque_files
+  DEPENDS ${torque_timestamp_file}
 )
+
+# Set all the generated files as GENERATED to help CMake understand they'll be created
+foreach(file IN LISTS torque-outputs torque_outputs)
+  set_source_files_properties(${file} PROPERTIES GENERATED TRUE)
+endforeach()
+
+# Make v8_torque_generated depend on the timestamp file
+add_dependencies(v8_torque_generated gen_torque_files)
 
 #
 # torque
