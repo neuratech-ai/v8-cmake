@@ -1803,7 +1803,7 @@ DEFINE_BOOL(
     "enable type checks based on instance types provided by the embedder")
 
 // bootstrapper.cc
-DEFINE_BOOL(expose_gc, false, "expose gc extension")
+DEFINE_BOOL(expose_gc, true, "expose gc extension")
 DEFINE_STRING(expose_gc_as, nullptr,
               "expose gc extension under the specified name")
 DEFINE_IMPLICATION(expose_gc_as, expose_gc)
