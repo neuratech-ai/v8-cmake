@@ -983,13 +983,6 @@ endforeach()
 list(REMOVE_DUPLICATES torque_new_outputs)
 set(torque_outputs ${torque_new_outputs})
 
-# print outputs for debugging
-message(STATUS "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-foreach(f IN LISTS torque_outputs)
-  message(STATUS "  ${f}")
-endforeach()
-message(STATUS "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-
 add_custom_command(
   OUTPUT ${torque_outputs}
   COMMAND ${CMAKE_COMMAND} -E make_directory ${torque_dirs}
