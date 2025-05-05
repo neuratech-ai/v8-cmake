@@ -945,23 +945,23 @@ set(torque_files_rel ${torque_files})
 list(TRANSFORM torque_files REPLACE "[.]tq$" "-tq-csa.cc" OUTPUT_VARIABLE torque_csa_cc)
 list(TRANSFORM torque_csa_cc REPLACE "[.]cc$" ".h" OUTPUT_VARIABLE torque_headers)
 list(APPEND torque_outputs
-  class-debug-readers-tq.cc
+  #class-debug-readers-tq.cc
   class-debug-readers.cc
-  class-definitions-tq.cc
-  class-definitions.cc
-  class-verifiers-tq.cc
+  #class-definitions-tq.cc
+  #class-definitions.cc
+  #class-verifiers-tq.cc
   class-verifiers.cc
-  exported-macros-assembler-tq.cc
+  #exported-macros-assembler-tq.cc
   exported-macros-assembler.cc
-  factory-tq.cc
-  factory-tq.inc
+  #factory-tq.cc
+  #factory-tq.inc
   factory.cc
   factory.inc
-  interface-descriptors-tq.inc
+  #interface-descriptors-tq.inc
   interface-descriptors.inc
   objects-body-descriptors-inl.inc
-  objects-body-descriptors-tq-inl.inc
-  objects-printer-tq.cc
+  #objects-body-descriptors-tq-inl.inc
+  #objects-printer-tq.cc
   objects-printer.cc)
 list(APPEND torque_outputs ${torque_csa_cc} ${torque_headers})
 
