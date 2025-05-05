@@ -1024,29 +1024,35 @@ target_include_directories(v8_torque_generated
   ${PROJECT_SOURCE_DIR}/v8
 )
 
-# The torque-outputs and torque_outputs variables can have too many characters
-# on Windows to be executed on the command line, so we have to write it to a
-# temporary file and execute that 
-file(WRITE "${PROJECT_BINARY_DIR}/touch_torque_outputs.cmake"
-  "file(TOUCH ${torque-outputs};${torque_outputs})")
+# Create a single list of all output files (merge torque-outputs and torque_outputs)
+set(all_torque_outputs ${torque-outputs} ${torque_outputs})
+list(REMOVE_DUPLICATES all_torque_outputs)
 
+# Create a timestamp file to track when Torque was last run
+set(torque_timestamp "${PROJECT_BINARY_DIR}/torque.timestamp")
+
+# Fix the custom command to use the timestamp approach
 add_custom_command(
   COMMAND
   torque
   -o ${PROJECT_BINARY_DIR}/torque-generated
   -v8-root ${PROJECT_SOURCE_DIR}/v8
   ${torque_files}
-  COMMAND
-  ${CMAKE_COMMAND} -P ${PROJECT_BINARY_DIR}/touch_torque_outputs.cmake
+  # Create a timestamp file instead of touching all outputs
+  COMMAND ${CMAKE_COMMAND} -E touch ${torque_timestamp}
   DEPENDS
   torque
   ${torque_dirs}
   ${torque_files_abs}
   OUTPUT
-  ${torque-outputs}
-  ${torque_outputs}
+  ${torque_timestamp}
+  COMMENT "Generating Torque files"
 )
 
+# Create a custom target that depends on the timestamp
+add_custom_target(generate_torque_files ALL DEPENDS ${torque_timestamp})
+
+add_dependencies(v8_torque_generated generate_torque_files)
 
 add_custom_command(
   COMMAND
