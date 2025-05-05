@@ -914,32 +914,15 @@ target_include_directories(bytecode_builtins_list_generator
 
 target_link_libraries(bytecode_builtins_list_generator v8_libbase)
 
-#
-# v8_torque_generated
-#
-
-# Note: torque does not like absolute paths.
-file(GLOB_RECURSE torque-builtins
-  RELATIVE ${PROJECT_SOURCE_DIR}/v8
-  CONFIGURE_DEPENDS v8/src/builtins/*.tq
-)
-
-file(GLOB_RECURSE torque-objects
-  RELATIVE ${PROJECT_SOURCE_DIR}/v8
-  CONFIGURE_DEPENDS v8/src/objects/*.tq
-)
-
-list(APPEND torque_files ${torque-builtins})
-list(APPEND torque_files ${torque-objects})
-
-list(APPEND torque_files
+# torque build
+file(GLOB_RECURSE torque-builtins RELATIVE ${PROJECT_SOURCE_DIR}/v8 CONFIGURE_DEPENDS v8/src/builtins/*.tq)
+file(GLOB_RECURSE torque-objects RELATIVE ${PROJECT_SOURCE_DIR}/v8 CONFIGURE_DEPENDS v8/src/objects/*.tq)
+set(torque_files ${torque-builtins} ${torque-objects}
   src/debug/debug-wasm-objects.tq
   src/ic/handler-configuration.tq
   src/wasm/wasm-objects.tq
   test/torque/test-torque.tq
-  third_party/v8/builtins/array-sort.tq
-)
-
+  third_party/v8/builtins/array-sort.tq)
 if(NOT V8_ENABLE_I18N)
   list(REMOVE_ITEM torque_files
     src/objects/intl-objects.tq
@@ -955,60 +938,67 @@ if(NOT V8_ENABLE_I18N)
     src/objects/js-relative-time-format.tq
     src/objects/js-segment-iterator.tq
     src/objects/js-segmenter.tq
-    src/objects/js-segments.tq
-  )
+    src/objects/js-segments.tq)
 endif()
-
 list(TRANSFORM torque_files PREPEND v8/ OUTPUT_VARIABLE torque_files_abs)
+set(torque_files_rel ${torque_files})
+list(TRANSFORM torque_files REPLACE "[.]tq$" "-tq-csa.cc" OUTPUT_VARIABLE torque_csa_cc)
+list(TRANSFORM torque_csa_cc REPLACE "[.]cc$" ".h" OUTPUT_VARIABLE torque_headers)
+list(APPEND torque_outputs
+  class-debug-readers-tq.cc
+  class-debug-readers.cc
+  class-definitions-tq.cc
+  class-definitions.cc
+  class-verifiers-tq.cc
+  class-verifiers.cc
+  exported-macros-assembler-tq.cc
+  exported-macros-assembler.cc
+  factory-tq.cc
+  factory-tq.inc
+  factory.cc
+  factory.inc
+  interface-descriptors-tq.inc
+  interface-descriptors.inc
+  objects-body-descriptors-inl.inc
+  objects-body-descriptors-tq-inl.inc
+  objects-printer-tq.cc
+  objects-printer.cc)
+list(APPEND torque_outputs ${torque_csa_cc} ${torque_headers})
 
-# Note: target v8_compiler depends on ${torque_outputs}. Maybe this should be
-# a source-only dependency.
-set(torque_outputs
-  ${PROJECT_BINARY_DIR}/torque-generated/class-debug-readers-tq.cc
-  ${PROJECT_BINARY_DIR}/torque-generated/class-debug-readers.cc
-  ${PROJECT_BINARY_DIR}/torque-generated/class-definitions-tq.cc
-  ${PROJECT_BINARY_DIR}/torque-generated/class-definitions.cc
-  ${PROJECT_BINARY_DIR}/torque-generated/class-verifiers-tq.cc
-  ${PROJECT_BINARY_DIR}/torque-generated/class-verifiers.cc
-  ${PROJECT_BINARY_DIR}/torque-generated/exported-macros-assembler-tq.cc
-  ${PROJECT_BINARY_DIR}/torque-generated/exported-macros-assembler.cc
-  ${PROJECT_BINARY_DIR}/torque-generated/factory-tq.cc
-  ${PROJECT_BINARY_DIR}/torque-generated/factory-tq.inc
-  ${PROJECT_BINARY_DIR}/torque-generated/factory.cc
-  ${PROJECT_BINARY_DIR}/torque-generated/factory.inc
-  ${PROJECT_BINARY_DIR}/torque-generated/interface-descriptors-tq.inc
-  ${PROJECT_BINARY_DIR}/torque-generated/interface-descriptors.inc
-  ${PROJECT_BINARY_DIR}/torque-generated/objects-body-descriptors-inl.inc
-  ${PROJECT_BINARY_DIR}/torque-generated/objects-body-descriptors-tq-inl.inc
-  ${PROJECT_BINARY_DIR}/torque-generated/objects-printer-tq.cc
-  ${PROJECT_BINARY_DIR}/torque-generated/objects-printer.cc
-)
+set_source_files_properties(${torque_outputs} PROPERTIES GENERATED TRUE)
 
-list(TRANSFORM torque_files
-  REPLACE "[.]tq$" "-tq-csa.cc"
-  OUTPUT_VARIABLE torque-outputs
-)
-
-list(TRANSFORM torque-outputs
-  REPLACE "[.]cc$" ".h"
-  OUTPUT_VARIABLE torque-headers
-)
-
-list(APPEND torque-outputs ${torque-headers})
-list(TRANSFORM torque-outputs PREPEND "${PROJECT_BINARY_DIR}/torque-generated/")
-
-foreach(filename IN LISTS torque_files)
-  get_filename_component(directory ${filename} DIRECTORY)
-  list(APPEND torque_dirs ${PROJECT_BINARY_DIR}/torque-generated/${directory})
+foreach(f IN LISTS torque_files)
+  get_filename_component(dir ${f} DIRECTORY)
+  list(APPEND torque_dirs ${PROJECT_BINARY_DIR}/torque-generated/${dir})
 endforeach()
-
 list(REMOVE_DUPLICATES torque_dirs)
 
-add_library(
-  v8_torque_generated STATIC
-  ${torque-outputs}
-  ${torque_outputs}
-)
+# prepent ${PROJECT_BINARY_DIR}/torque-generated to the output files
+SET(torque_new_outputs "")
+foreach(f IN LISTS torque_outputs)
+  get_filename_component(dir ${f} DIRECTORY)
+  string(REPLACE "${PROJECT_SOURCE_DIR}/v8/" "" f_rel ${f})
+  list(APPEND torque_new_outputs ${PROJECT_BINARY_DIR}/torque-generated${dir_rel}/${f_rel})
+endforeach()
+list(REMOVE_DUPLICATES torque_new_outputs)
+set(torque_outputs ${torque_new_outputs})
+
+# print outputs for debugging
+message(STATUS "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+foreach(f IN LISTS torque_outputs)
+  message(STATUS "  ${f}")
+endforeach()
+message(STATUS "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+
+add_custom_command(
+  OUTPUT ${torque_outputs}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${torque_dirs}
+  COMMAND torque -o ${PROJECT_BINARY_DIR}/torque-generated -v8-root ${PROJECT_SOURCE_DIR}/v8 ${torque_files_rel}
+  BYPRODUCTS ${torque_outputs}
+  DEPENDS torque ${torque_files_abs}
+  VERBATIM)
+
+add_library(v8_torque_generated STATIC ${torque_outputs})
 
 target_compile_definitions(v8_torque_generated PRIVATE $<${is-msvc}:_HAS_EXCEPTIONS=0>)
 target_compile_options(v8_torque_generated PRIVATE ${disable-exceptions})
@@ -1017,52 +1007,7 @@ if(enable-fPIC)
 endif()
 target_link_libraries(v8_torque_generated PRIVATE v8-bytecodes-builtin-list)
 
-target_include_directories(v8_torque_generated
-  PUBLIC
-  ${PROJECT_BINARY_DIR}
-  ${PROJECT_SOURCE_DIR}/v8/include
-  ${PROJECT_SOURCE_DIR}/v8
-)
-
-# Create a single list of all output files (merge torque-outputs and torque_outputs)
-set(all_torque_outputs ${torque-outputs} ${torque_outputs})
-list(REMOVE_DUPLICATES all_torque_outputs)
-
-# Create a timestamp file to track when Torque was last run
-set(torque_timestamp "${PROJECT_BINARY_DIR}/torque.timestamp")
-
-# Fix the custom command to use the timestamp approach
-
-# if timestamp exists skip the generation
-if(EXISTS ${torque_timestamp})
-  add_custom_command(
-    COMMAND ${CMAKE_COMMAND} -E touch ${torque_timestamp}
-    OUTPUT ${torque_timestamp}
-    COMMENT "Torque files already generated, skipping."
-  )
-else()
-  add_custom_command(
-    COMMAND
-    torque
-    -o ${PROJECT_BINARY_DIR}/torque-generated
-    -v8-root ${PROJECT_SOURCE_DIR}/v8
-    ${torque_files}
-    # Create a timestamp file instead of touching all outputs
-    COMMAND ${CMAKE_COMMAND} -E touch ${torque_timestamp}
-    DEPENDS
-    torque
-    ${torque_dirs}
-    ${torque_files_abs}
-    OUTPUT
-    ${torque_timestamp}
-    COMMENT "Generating Torque files"
-  )
-endif()
-
-# Create a custom target that depends on the timestamp
-add_custom_target(generate_torque_files ALL DEPENDS ${torque_timestamp})
-
-add_dependencies(v8_torque_generated generate_torque_files)
+target_include_directories(v8_torque_generated PUBLIC ${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/v8/include ${PROJECT_SOURCE_DIR}/v8)
 
 add_custom_command(
   COMMAND
