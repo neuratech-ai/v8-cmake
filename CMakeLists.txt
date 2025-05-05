@@ -1032,22 +1032,32 @@ list(REMOVE_DUPLICATES all_torque_outputs)
 set(torque_timestamp "${PROJECT_BINARY_DIR}/torque.timestamp")
 
 # Fix the custom command to use the timestamp approach
-add_custom_command(
-  COMMAND
-  torque
-  -o ${PROJECT_BINARY_DIR}/torque-generated
-  -v8-root ${PROJECT_SOURCE_DIR}/v8
-  ${torque_files}
-  # Create a timestamp file instead of touching all outputs
-  COMMAND ${CMAKE_COMMAND} -E touch ${torque_timestamp}
-  DEPENDS
-  torque
-  ${torque_dirs}
-  ${torque_files_abs}
-  OUTPUT
-  ${torque_timestamp}
-  COMMENT "Generating Torque files"
-)
+
+# if timestamp exists skip the generation
+if(EXISTS ${torque_timestamp})
+  add_custom_command(
+    COMMAND ${CMAKE_COMMAND} -E touch ${torque_timestamp}
+    OUTPUT ${torque_timestamp}
+    COMMENT "Torque files already generated, skipping."
+  )
+else()
+  add_custom_command(
+    COMMAND
+    torque
+    -o ${PROJECT_BINARY_DIR}/torque-generated
+    -v8-root ${PROJECT_SOURCE_DIR}/v8
+    ${torque_files}
+    # Create a timestamp file instead of touching all outputs
+    COMMAND ${CMAKE_COMMAND} -E touch ${torque_timestamp}
+    DEPENDS
+    torque
+    ${torque_dirs}
+    ${torque_files_abs}
+    OUTPUT
+    ${torque_timestamp}
+    COMMENT "Generating Torque files"
+  )
+endif()
 
 # Create a custom target that depends on the timestamp
 add_custom_target(generate_torque_files ALL DEPENDS ${torque_timestamp})
